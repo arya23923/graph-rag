@@ -5,10 +5,18 @@ from datetime import datetime
 from backend.config import config
 
 router = APIRouter(prefix="/api/upload", tags=["Document Upload"])
+ALLOWED_EXTENSIONS = {".txt", ".pdf", ".docx", ".md"}
 
 @router.post("/")
 async def upload_document(file: UploadFile = File(...)):
-    """Upload a document for processing"""
+    # Add this block
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{ext}' not supported. Allowed: {list(ALLOWED_EXTENSIONS)}"
+        )
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_filename = f"{timestamp}_{file.filename}"
     file_path = config.UPLOAD_DIR / safe_filename

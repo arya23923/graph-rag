@@ -1,56 +1,71 @@
-# backend/core/text_extractor.py
-
+import re
 import os
 from pathlib import Path
 
-
 class TextExtractor:
-    """Extracts plain text from PDF, DOCX, TXT, and Markdown files."""
-
     ALLOWED_EXTENSIONS = {".txt", ".pdf", ".docx", ".md"}
 
-    def extract(self, file_path: str) -> str:
+    def extract(self, file_path) -> dict:
         path = Path(file_path)
         ext = path.suffix.lower()
 
         if ext not in self.ALLOWED_EXTENSIONS:
-            raise ValueError(f"Unsupported file type: {ext}")
+            return {
+                "success": False,
+                "error": f"Unsupported file type: {ext}",
+                "text": "",
+                "metadata": {}
+            }
 
-        if ext == ".txt" or ext == ".md":
-            return self._extract_from_txt(file_path)
-        elif ext == ".pdf":
-            return self._extract_from_pdf(file_path)
-        elif ext == ".docx":
-            return self._extract_from_docx(file_path)
+        try:
+            dispatch = {
+                ".txt":  self._from_txt,
+                ".md":   self._from_txt,
+                ".pdf":  self._from_pdf,
+                ".docx": self._from_docx,
+            }
+            raw = dispatch[ext](path)
+            cleaned = self._clean(raw)
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
+            return {
+                "success": True,
+                "text": cleaned,
+                "error": None,
+                "metadata": {
+                    "filename": path.name,
+                    "extension": ext,
+                    "char_count": len(cleaned),
+                    "word_count": len(cleaned.split()),
+                }
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "text": "",
+                "metadata": {"filename": path.name}
+            }
 
-    def _extract_from_txt(self, file_path: str) -> str:
-        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+    def _from_txt(self, path):
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
             return f.read()
 
-    def _extract_from_pdf(self, file_path: str) -> str:
-        try:
-            import pdfplumber
-        except ImportError:
-            raise ImportError("Install pdfplumber: pip install pdfplumber")
-
-        text_parts = []
-        with pdfplumber.open(file_path) as pdf:
+    def _from_pdf(self, path):
+        import pdfplumber
+        parts = []
+        with pdfplumber.open(path) as pdf:
             for page in pdf.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text_parts.append(page_text)
-        return "\n".join(text_parts)
+                t = page.extract_text()
+                if t:
+                    parts.append(t)
+        return "\n".join(parts)
 
-    def _extract_from_docx(self, file_path: str) -> str:
-        try:
-            from docx import Document
-        except ImportError:
-            raise ImportError("Install python-docx: pip install python-docx")
+    def _from_docx(self, path):
+        from docx import Document
+        doc = Document(path)
+        return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
 
-        doc = Document(file_path)
-        paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-        return "\n".join(paragraphs)
+    def _clean(self, text: str) -> str:
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        text = re.sub(r'[ \t]+', ' ', text)
+        return text.strip()

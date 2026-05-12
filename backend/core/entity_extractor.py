@@ -1,56 +1,83 @@
-# backend/core/entity_extractor.py
-
+import os
 import re
+import uuid
 from typing import List, Dict
 
-
-# Domain-specific tech terms that generic NLP models often miss
-TECH_TERMS = {
-    "AWS", "Azure", "GCP", "Kubernetes", "Docker", "DevOps",
-    "Terraform", "Ansible", "Jenkins", "Kafka", "Spark", "Hadoop",
-    "PostgreSQL", "MongoDB", "Redis", "Elasticsearch", "FastAPI",
-    "LangChain", "Neo4j", "NetworkX", "OpenAI", "Hugging Face",
+# Domain dictionaries (extend via .env later)
+DOMAIN_TERMS = {
+    "tech": {
+        "AWS", "Azure", "GCP", "Kubernetes", "Docker", "DevOps",
+        "Terraform", "Ansible", "Jenkins", "Kafka", "Spark", "Hadoop",
+        "PostgreSQL", "MongoDB", "Redis", "Elasticsearch", "FastAPI",
+        "LangChain", "Neo4j", "NetworkX", "OpenAI", "Hugging Face",
+        "Python", "Java", "React", "Node.js"
+    }
 }
 
+SPACY_USEFUL_LABELS = {
+    "PERSON", "ORG", "GPE", "PRODUCT", "EVENT", "LAW", "NORP"
+}
 
 class EntityExtractor:
     """
-    Extracts named entities using spaCy NER + a tech-term dictionary overlay.
-    Falls back to dictionary-only if spaCy is unavailable.
+    Graph-ready Entity Extractor
+    spaCy NER + domain dictionary + metadata enrichment
     """
 
-    def __init__(self, model: str = "en_core_web_sm"):
+    def __init__(self, model: str = "en_core_web_sm", domain: str = None):
+        domain = domain or os.getenv("EXTRACTION_DOMAIN", "tech")
+        self.domain_terms = DOMAIN_TERMS.get(domain, DOMAIN_TERMS["tech"])
         self.nlp = None
+
         try:
             import spacy
             self.nlp = spacy.load(model)
         except Exception as e:
-            print(f"[EntityExtractor] spaCy not available ({e}). Using dictionary fallback.")
+            print(f"[EntityExtractor] spaCy unavailable ({e}). Using dictionary only.")
 
-    def extract(self, text: str) -> List[Dict[str, str]]:
-        """
-        Returns a list of dicts: {"text": ..., "label": ...}
-        Labels: PERSON, ORG, GPE, PRODUCT, TECH (custom), etc.
-        """
-        entities: Dict[str, Dict] = {}  # deduplicate by normalized text
+    # -----------------------------------------------------
 
-        # --- spaCy NER ---
+    def extract(self, text: str, source_doc: str = "unknown") -> List[Dict]:
+        """
+        Returns graph-ready entity objects
+        """
+        seen: Dict[str, Dict] = {}
+
+        # ---------- spaCy NER ----------
         if self.nlp:
             doc = self.nlp(text)
             for ent in doc.ents:
-                # Keep only useful entity types
-                if ent.label_ in {"PERSON", "ORG", "GPE", "PRODUCT", "WORK_OF_ART", "EVENT", "LAW", "NORP"}:
-                    key = ent.text.strip().lower()
-                    if key not in entities:
-                        entities[key] = {"text": ent.text.strip(), "label": ent.label_}
+                if ent.label_ in SPACY_USEFUL_LABELS:
+                    key = ent.text.lower().strip()
+                    if key not in seen:
+                        seen[key] = self._build_entity(
+                            text=ent.text.strip(),
+                            label=ent.label_,
+                            source=source_doc,
+                            confidence=0.85,
+                        )
 
-        # --- Tech-term dictionary overlay ---
-        for term in TECH_TERMS:
-            # Case-insensitive whole-word match
-            pattern = r'\b' + re.escape(term) + r'\b'
-            if re.search(pattern, text, re.IGNORECASE):
+        # ---------- Domain dictionary ----------
+        for term in self.domain_terms:
+            if re.search(r"\b" + re.escape(term) + r"\b", text, re.IGNORECASE):
                 key = term.lower()
-                if key not in entities:
-                    entities[key] = {"text": term, "label": "TECH"}
+                if key not in seen:
+                    seen[key] = self._build_entity(
+                        text=term,
+                        label="TECH",
+                        source=source_doc,
+                        confidence=0.95,
+                    )
 
-        return list(entities.values())
+        return list(seen.values())
+
+    # -----------------------------------------------------
+
+    def _build_entity(self, text: str, label: str, source: str, confidence: float):
+        return {
+            "id": str(uuid.uuid4()),
+            "name": text,
+            "type": label,
+            "source": source,
+            "confidence": confidence,
+        }

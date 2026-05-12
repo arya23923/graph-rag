@@ -6,6 +6,50 @@ __pycache__/
 # C extensions
 *.so
 
+# Data directories (user uploads and generated files)
+data/uploads/
+data/processed/
+data/*.tmp
+data/*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
 # Distribution / packaging
 .Python
 build/

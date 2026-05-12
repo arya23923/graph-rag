@@ -1,28 +1,38 @@
-# Core
-streamlit==1.28.0
-fastapi==0.104.0
-uvicorn==0.24.0
+# Core Frameworks
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+streamlit>=1.28.0
+python-dotenv>=1.0.0
 
 # Database
-neo4j==5.14.1
+neo4j>=5.14.0
 
-# NLP & LLM
-langchain==0.1.0
-langchain-openai==0.0.2
-transformers==4.35.0
-
-# Graph
-networkx==3.2
-pyvis==0.3.2
-plotly==5.17.0
+# NLP & LLM - Let pip resolve compatible versions
+langchain>=0.1.0
+langchain-openai>=0.0.2
+langchain-community>=0.0.10
+openai>=1.6.1  # Minimum version that works
 
 # Document Processing
-pypdf==3.17.0
-python-docx==1.1.0
-pandas==2.1.0
-numpy==1.24.3
+PyPDF2>=3.0.0
+python-docx>=1.1.0
+markdown>=3.5.0
+pdfplumber>=0.10.0
+chardet>=5.2.0
+
+# Graph Processing
+networkx>=3.2.0
+pyvis>=0.3.0
+plotly>=5.18.0
+
+# Data Processing
+pandas>=2.2.0
+numpy>=1.26.0
+
+# NLP
+spacy>=3.7.0
 
 # Utilities
-python-dotenv==1.0.0
-pydantic==2.4.0
-requests==2.31.0
+pydantic>=2.5.0
+requests>=2.31.0
+tiktoken>=0.5.0

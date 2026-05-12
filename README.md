@@ -86,20 +86,6 @@ graph-rag-assistant/
 └── README.md
 ```
 
----
-
-##  Completed Features
-
-| User Story | Description | Status |
-|------------|-------------|--------|
-| US-01 | Project initialized with all dependencies |  
-| US-02 | Document upload functionality |  
-| US-03 | Text extraction (PDF, DOCX, TXT, MD) |  
-| US-04 | Entity extraction |  |
-| US-05 | Relationship extraction between entities |  
-
----
-
 ##  Local Setup
 
 ### Prerequisites

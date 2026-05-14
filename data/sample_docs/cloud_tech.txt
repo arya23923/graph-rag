@@ -1,0 +1,23 @@
+Cloud and DevOps Technology Stack
+
+Kubernetes orchestrates Docker containers across cloud environments including AWS, Azure, and GCP.
+Terraform integrates with Kubernetes to provision infrastructure declaratively using infrastructure-as-code.
+Jenkins deploys applications using Docker containers and works with Ansible for server configuration management.
+AWS supports Kubernetes via Amazon EKS and integrates with Terraform for automated cloud provisioning.
+Docker runs on AWS EC2 instances and integrates with Kubernetes for container orchestration at scale.
+
+AI and Data Engineering Stack
+
+LangChain integrates with OpenAI language models and uses Neo4j as a graph store for knowledge retrieval.
+Python supports LangChain, FastAPI, and NetworkX for machine learning and graph analysis workflows.
+Kafka integrates with Spark for real-time stream processing and connects to Elasticsearch for search indexing.
+Hugging Face works with LangChain to serve open-source language models for NLP tasks.
+Neo4j supports LangChain as a vector and graph store for retrieval-augmented generation applications.
+
+Backend and API Services
+
+FastAPI is built with Python and connects to Neo4j for graph-based knowledge queries.
+Redis supports FastAPI for session caching and connects to MongoDB for persistent document storage.
+PostgreSQL integrates with FastAPI via SQLAlchemy ORM and runs on AWS RDS for managed database services.
+Elasticsearch connects to Kafka and supports full-text search for distributed backend microservices.
+Pydantic works with FastAPI for data validation and schema definition in Python APIs.

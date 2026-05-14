@@ -1,94 +1,58 @@
+"""
+FastAPI entry point — Tech Domain Graph RAG Knowledge Assistant.
+"""
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-import json
 
 from backend.config import config
 from backend.api.routes import upload, graph, query, comparison
-from backend.core.text_extractor import TextExtractor
-from backend.core.entity_extractor import EntityExtractor
-from backend.core.relationship_extractor import RelationshipExtractor
-from backend.database.neo4j_client import Neo4jClient
 
-app = FastAPI(title="Graph RAG Knowledge Assistant", version="1.0.0")
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+app = FastAPI(
+    title="Tech Graph RAG Knowledge Assistant",
+    version="2.0.0",
+    description="Graph-based RAG for the tech domain — Neo4j + NetworkX + FastAPI",
 )
 
-# Include routers
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"],
+)
+
 app.include_router(upload.router)
 app.include_router(graph.router)
 app.include_router(query.router)
 app.include_router(comparison.router)
 
-# Initialize components
-text_extractor = TextExtractor()
-entity_extractor = EntityExtractor()
-relationship_extractor = RelationshipExtractor()
-neo4j_client = Neo4jClient()
 
 @app.get("/")
 async def root():
     return {
-        "message": "Graph RAG Knowledge Assistant API",
-        "version": "1.0.0",
+        "message": "Tech Graph RAG Knowledge Assistant API",
+        "version": "2.0.0",
         "status": "running",
-        "endpoints": [
-            "/docs - Swagger documentation",
-            "/api/upload - Upload documents",
-            "/api/graph - Graph operations",
-            "/api/query - Query assistant"
-        ]
+        "endpoints": {
+            "/docs":                  "Swagger UI",
+            "/api/upload/":           "Upload tech documents",
+            "/api/graph/build":       "Build graph from text (POST)",
+            "/api/graph/entity/{e}":  "Get entity subgraph",
+            "/api/graph/path":        "Find path between entities (POST)",
+            "/api/graph/stats":       "Graph statistics",
+            "/api/query/":            "Query assistant (POST)",
+            "/api/comparison/":       "Graph RAG vs Traditional RAG (POST)",
+        },
     }
 
-@app.post("/api/process-document/{filename}")
-async def process_document_complete(filename: str):
-    """Complete pipeline: Extract text → Entities → Relationships"""
-    
-    file_path = config.UPLOAD_DIR / filename
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    # Step 1: Extract text
-    extraction = text_extractor.extract(file_path)
-    if not extraction["success"]:
-        raise HTTPException(status_code=500, detail=extraction["error"])
-    
-    text = extraction["text"]
-    
-    # Step 2: Extract entities
-    entity_result = entity_extractor.extract_entities(text)
-    
-    # Step 3: Extract relationships
-    relationship_result = relationship_extractor.extract_relationships_batch(
-        entity_result["entities"], 
-        text
-    )
-    
-    # Step 4: Store in Neo4j
-    graph_result = await neo4j_client.create_knowledge_graph(
-        entity_result["entities"],
-        relationship_result["relationships"]
-    )
-    
-    return {
-        "status": "success",
-        "document": filename,
-        "extraction": {
-            "char_count": extraction["char_count"],
-            "word_count": extraction["word_count"]
-        },
-        "entities": entity_result,
-        "relationships": relationship_result,
-        "graph_storage": graph_result
-    }
+
+@app.get("/health")
+async def health():
+    from backend.database.neo4j_client import Neo4jClient
+    neo4j = Neo4jClient()
+    stats = neo4j.get_graph_stats()
+    neo4j.close()
+    return {"status": "ok", "neo4j": stats}
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,25 +1,3 @@
-# ── Neo4j Docker data ──────────────────────────────────
-neo4j_data/
-data/neo4j/
-
-# ── Uploaded documents (user private data) ─────────────
-data/uploads/
-data/processed/
-*.pdf
-*.docx
-*.xlsx
-*.csv
-
-# ── API Keys extra safety ──────────────────────────────
-secrets.json
-credentials.json
-service_account.json
-*.pem
-*.key
-
-# ── Virtual Environment (already has .venv but add) ────
-.venv/
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
